@@ -3,7 +3,8 @@
 :icons: font
 :experimental:
 
-## Step 1: About This Lab
+[.lead]
+*Step 1 — About This Lab*
 
 == Objective
 

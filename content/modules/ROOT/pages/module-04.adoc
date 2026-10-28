@@ -1,5 +1,8 @@
 = Turn On PQC — Watch It Break
 
+[.lead]
+*Step 4 — Turn On PQC — Watch It Break*
+
 Super-Business's security team just adopted a new rule: *all* internal HTTPS connections must use
 post-quantum key exchange to defend against "harvest now, decrypt later." Their health-check tool
 now connects while *requiring* the post-quantum group `X25519MLKEM768`.

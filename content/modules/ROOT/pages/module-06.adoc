@@ -1,5 +1,8 @@
 = Require Post-Quantum TLS
 
+[.lead]
+*Step 6 — Require Post-Quantum TLS*
+
 Your server now offers *both* post-quantum and classical key exchange, which is perfect for a
 migration. But for a high-value service you may want to go further and *mandate* post-quantum key
 exchange, so that no client can fall back to a quantum-vulnerable algorithm. In this capstone you

@@ -27,4 +27,7 @@ tabs:
   - name: ">_ terminal"
     path: /wetty
     port: 443
+  - name: "Web App"
+    url: https://webapp-%GUID%.%DOMAIN%/
+    external: true
 

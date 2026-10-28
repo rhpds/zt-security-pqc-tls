@@ -1,5 +1,8 @@
 = Deploy the Web App as a Service
 
+[.lead]
+*Step 3 — Deploy the Web App as a Service*
+
 Super-Business runs its secure portal with *nginx*. In this module you will bring it up as a
 *systemd service* on `rhel` and serve it over HTTPS. Right now it uses *classical* TLS — that is
 our baseline before we bring post-quantum into the picture.
@@ -66,6 +69,14 @@ curl -k https://localhost/
 ----
 
 You should see the *Super-Business Secure Portal* HTML. The web service is live over TLS.
+
+[TIP]
+====
+You can also open the *Web App* tab at the top of this lab to view the portal in a browser.
+Because the lab uses a throwaway self-signed certificate, your browser will warn you the first
+time — accept/continue to proceed. (In the final module, when the server *requires* post-quantum
+key exchange, the page will load only in a browser that supports it.)
+====
 
 == Step 5 — See which key exchange was negotiated
 

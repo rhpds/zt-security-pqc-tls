@@ -1,5 +1,8 @@
 = Diagnose and Fix
 
+[.lead]
+*Step 5 — Diagnose and Fix*
+
 You confirmed the diagnosis: the server offers only the classical `X25519` group, so any client
 that *requires* post-quantum key exchange is turned away. Time to fix Bill's configuration so the
 server *also* offers the post-quantum hybrid group — without breaking classical clients.

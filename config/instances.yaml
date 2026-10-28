@@ -11,3 +11,20 @@ virtualmachines:
         value: "bastions"
     networks:
       - default
+    # Expose the VM's nginx (HTTPS/443) so the lab's "Web App" tab can reach it.
+    # The app terminates its own TLS (and does the PQC key exchange), so the route
+    # must PASS TLS THROUGH to the VM rather than terminating at the edge.
+    services:
+      - name: webapp
+        ports:
+          - port: 443
+            protocol: TCP
+            targetPort: 443
+            name: webapp
+    routes:
+      - name: webapp
+        host: webapp
+        service: webapp
+        targetPort: 443
+        tls: true
+        tls_termination: Passthrough

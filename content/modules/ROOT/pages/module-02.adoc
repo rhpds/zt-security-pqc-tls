@@ -1,5 +1,8 @@
 = Your Post-Quantum Foundation
 
+[.lead]
+*Step 2 — Your Post-Quantum Foundation*
+
 Before deploying anything, let's confirm that post-quantum cryptography for TLS is already
 available on this RHEL 10 system. On RHEL 10.1 and later you do *not* install anything or flip a
 preview switch — the building blocks are part of the standard configuration.
