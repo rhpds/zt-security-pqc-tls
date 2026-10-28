@@ -1,25 +1,30 @@
 ---
+
 antora:
   name: modules
   dir: www
   modules:
-    - name: index
-      label: "Introduction"
     - name: module-01
-      label: "Module 1: The PQC Threat Model"
+      label: "About This Lab"
+      solveButton: false
     - name: module-02
-      label: "Module 2: Deploy a Classical TLS Web Server"
+      label: "Your Post-Quantum Foundation"
+      solveButton: false
     - name: module-03
-      label: "Module 3: Upgrade to Post-Quantum TLS"
+      label: "Deploy the Web App as a Service"
+      solveButton: false
     - name: module-04
-      label: "Module 4: Troubleshoot PQC Breaking Points"
+      label: "Turn On PQC — Watch It Break"
+      solveButton: false
+    - name: module-05
+      label: "Diagnose and Fix"
+      solveButton: false
+    - name: module-06
+      label: "Require Post-Quantum TLS"
+      solveButton: false
 
 tabs:
-  - name: ">_ Server"
+  - name: ">_ terminal"
     path: /wetty
     port: 443
-  - name: ">_ Client"
-    path: /wetty-client
-    port: 443
-  - name: PQC on RHEL 10 Docs
-    url: "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/security_hardening/using-the-system-wide-cryptographic-policies_security-hardening"
+

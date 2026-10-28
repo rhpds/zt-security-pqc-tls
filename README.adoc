@@ -1,0 +1,100 @@
+= Post-Quantum TLS on Red Hat Enterprise Linux 10
+
+An introductory, hands-on ZeroTouch lab (`zt-security-pqc-tls`) that walks a participant through
+post-quantum cryptography (PQC) for TLS/HTTPS on Red Hat Enterprise Linux 10. No cryptography
+background required. The participant runs a web application as an *nginx systemd service*, watches
+a post-quantum requirement break it, then diagnoses and fixes the server.
+
+== Audience and objectives
+
+Sysadmins, developers, and security-curious learners new to PQC. By the end, participants can
+explain the quantum threat and "harvest now, decrypt later," confirm the post-quantum TLS group
+(`X25519MLKEM768`) is available in OpenSSL 3.5 and the `DEFAULT` crypto-policy, bring up a
+containerless HTTPS web service, diagnose why a classical-only server fails a post-quantum client,
+fix it, and finally harden the server to *require* post-quantum key exchange.
+
+== Modules
+
+[cols="1,3,3",options="header"]
+|===
+| # | Module | What the participant does
+
+| 01 | About This Lab | Reads the quantum threat, PQC for TLS, and the lab environment
+| 02 | Your Post-Quantum Foundation | Confirms RHEL 10, OpenSSL 3.5, `DEFAULT` policy, and `X25519MLKEM768`
+| 03 | Deploy the Web App as a Service | `nginx -t` + `systemctl enable --now nginx`; serves HTTPS (classical TLS)
+| 04 | Turn On PQC — Watch It Break | Requires PQC via `curl --curves X25519MLKEM768`; handshake fails
+| 05 | Diagnose and Fix | Edits the nginx `ssl_ecdh_curve`, reloads; proves `X25519MLKEM768` is negotiated
+| 06 | Require Post-Quantum TLS | Offers *only* the hybrid group; classical-only clients are refused
+|===
+
+Each module ships a `solve-rhel.sh` (all participant commands) and a `validation-rhel.sh`
+(pass/fail with actionable hints) under `runtime-automation/module-NN/`. All runtime scripts run
+on `rhel`.
+
+== The break/fix mechanism
+
+The web server is nginx, which links against the system OpenSSL 3.5 and therefore *can* do
+post-quantum TLS. The lever is a single nginx directive in `/etc/nginx/conf.d/pqc-web.conf`:
+
+* `ssl_ecdh_curve X25519;` — classical only (the starting state; "Manager Bill" pinned it).
+* `ssl_ecdh_curve X25519MLKEM768:X25519;` — offers PQC, keeps classical fallback (the fix).
+* `ssl_ecdh_curve X25519MLKEM768;` — requires PQC, no fallback (the capstone).
+
+The client controls what it requires with `curl --curves <group>` / `openssl s_client -groups
+<group>`. A handshake succeeds only when client and server share a group — which is exactly how
+the "break" (PQC-required client vs. classical-only server) and the "fix" are demonstrated.
+
+== Lab environment
+
+One RHEL 10.1 VM, in the `bastions` group:
+
+* *rhel* — the host the participant uses (the terminal is logged in here as `rhel`). The web app
+  runs on this host as the `nginx` systemd service; the participant connects to
+  `https://localhost/` (port 443).
+
+Users `rhel` and `root` exist; `rhel` has passwordless sudo. Because PQC TLS is in the `DEFAULT`
+crypto-policy and OpenSSL 3.5 on RHEL 10.1+, the lab needs no special package installs for PQC
+itself — the capability is observed, broken (by configuration), fixed, then enforced.
+
+=== What setup provisions
+
+`setup-automation/setup-rhel.sh`:
+
+* installs `nginx` and `openssl`;
+* writes `/etc/nginx/conf.d/pqc-web.conf` pinned to classical `X25519` (Bill's config);
+* writes the web page to `/usr/share/nginx/html/index.html`;
+* generates a throwaway self-signed certificate in the standard RHEL PKI paths
+  (`/etc/pki/tls/certs/pqc-web.crt`, `/etc/pki/tls/private/pqc-web.key`), so it carries the correct
+  SELinux context for nginx;
+* runs `nginx -t` to surface any config problem at provision time.
+
+The nginx service is left *stopped*; the participant enables and starts it in module-03.
+
+[IMPORTANT]
+====
+*Verify these on first deploy — they are the parts this framework does not guarantee:*
+
+. *Image / version.* The supplied image `rhel-10-1-04-15-26` is a RHEL *10.1* image. PQC TLS
+  (`X25519MLKEM768` in OpenSSL 3.5) is present on 10.1 and later. For a 10.2 image, substitute its
+  identifier in `config/instances.yaml` — the content says "RHEL 10.1+" and remains correct.
+. *SELinux port 443.* nginx binds 443, which is in SELinux's `http_port_t` by default, so no port
+  change is needed. If you change the listen port to a non-HTTP port, add it with
+  `semanage port -a -t http_port_t -p tcp <port>`.
+. *`openssl s_client` output string.* The validation scripts grep for `Negotiated TLS1.3 group:`,
+  the line OpenSSL 3.x prints for the negotiated TLS 1.3 key-exchange group.
+====
+
+== Sources
+
+* https://www.redhat.com/en/blog/post-quantum-cryptography-red-hat-enterprise-linux-10
+* https://www.redhat.com/en/topics/security/post-quantum-cryptography
+* OpenSSL 3.5 TLS groups (`openssl list -tls-groups`), including `X25519MLKEM768` (FIPS 203 ML-KEM-768).
+* Module-01 format and personas adapted from the companion lab `zt-security-pqc-ssh`.
+
+== Local preview
+
+[source,shell]
+----
+./utilities/lab-build
+./utilities/lab-serve
+----

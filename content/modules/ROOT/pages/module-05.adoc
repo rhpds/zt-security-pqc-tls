@@ -1,0 +1,113 @@
+= Diagnose and Fix
+
+You confirmed the diagnosis: the server offers only the classical `X25519` group, so any client
+that *requires* post-quantum key exchange is turned away. Time to fix Bill's configuration so the
+server *also* offers the post-quantum hybrid group — without breaking classical clients.
+
+== Step 1 — Review the broken setting
+
+Look again at the server's TLS group configuration:
+
+[source,bash,role=execute]
+----
+grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
+----
+
+It reads `ssl_ecdh_curve X25519;` — classical only. We want the server to offer the post-quantum
+hybrid group `X25519MLKEM768` *first*, and keep `X25519` as a fallback for older clients.
+
+== Step 2 — Fix the configuration
+
+Edit `/etc/nginx/conf.d/pqc-web.conf` so the `ssl_ecdh_curve` line offers both groups. You can open
+it in an editor (`sudo vi /etc/nginx/conf.d/pqc-web.conf`), or run this command to do it for you:
+
+[source,bash,role=execute]
+----
+sudo sed -i 's|ssl_ecdh_curve.*|ssl_ecdh_curve X25519MLKEM768:X25519;|' /etc/nginx/conf.d/pqc-web.conf
+----
+
+Confirm the change:
+
+[source,bash,role=execute]
+----
+grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
+----
+
+It should now read:
+
+[source,nginx]
+----
+ssl_ecdh_curve X25519MLKEM768:X25519;
+----
+
+[NOTE]
+====
+Listing `X25519MLKEM768` first makes it the server's *preferred* group: a post-quantum-capable
+client gets post-quantum protection, while an older client that only speaks `X25519` can still
+connect. This "hybrid, prefer PQC, allow classical fallback" posture is the recommended way to
+roll out post-quantum TLS during a migration.
+====
+
+== Step 3 — Test and reload the service
+
+Always test the configuration before applying it:
+
+[source,bash,role=execute]
+----
+sudo nginx -t
+----
+
+If it reports success, reload the service so nginx picks up the new configuration:
+
+[source,bash,role=execute]
+----
+sudo systemctl reload nginx
+----
+
+== Step 4 — Verify the post-quantum client now works
+
+Repeat the post-quantum request that failed in the previous module:
+
+[source,bash,role=execute]
+----
+curl -k --curves X25519MLKEM768 https://localhost/
+----
+
+This time you get the *Super-Business Secure Portal* HTML back. The web service is reachable by
+post-quantum clients again.
+
+== Step 5 — Prove post-quantum was actually negotiated
+
+Confirm the key-exchange group on the wire:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+----
+
+You should now see:
+
+[source,text]
+----
+Negotiated TLS1.3 group: X25519MLKEM768
+----
+
+[IMPORTANT]
+====
+That one line is the goal of the fix: your web service now negotiates a *post-quantum* key
+exchange. A session recorded now cannot be decrypted later by a quantum computer, because the
+session key was protected by ML-KEM-768.
+====
+
+== Step 6 — Confirm classical clients still work
+
+Because you kept `X25519` as a fallback, an older client that cannot do post-quantum can still
+reach the site:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep "Negotiated TLS1.3 group"
+----
+
+This negotiates `X25519` — classical, but still functional. Your server now supports *both*
+worlds. In the final module you will decide to go further and *require* post-quantum.

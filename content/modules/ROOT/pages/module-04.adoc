@@ -1,0 +1,94 @@
+= Turn On PQC — Watch It Break
+
+Super-Business's security team just adopted a new rule: *all* internal HTTPS connections must use
+post-quantum key exchange to defend against "harvest now, decrypt later." Their health-check tool
+now connects while *requiring* the post-quantum group `X25519MLKEM768`.
+
+In this module you play the part of that post-quantum-requiring client — and watch it fail against
+Bill's server.
+
+== Step 1 — Confirm the app still works for a normal client
+
+First, prove the web service is healthy for an ordinary (classical) client:
+
+[source,bash,role=execute]
+----
+curl -k https://localhost/
+----
+
+You still get the portal HTML. So far, so good.
+
+== Step 2 — Connect while *requiring* post-quantum key exchange
+
+Now connect the way the security team's health check does. The `--curves` option tells the client
+which key-exchange group(s) it is willing to use — here, *only* the post-quantum
+`X25519MLKEM768`:
+
+[source,bash,role=execute]
+----
+curl -k --curves X25519MLKEM768 https://localhost/
+----
+
+This time it *fails*. You will see an error similar to:
+
+[source,text]
+----
+curl: (35) OpenSSL/3.5.x: error:0A000410:SSL routines::sslv3 alert handshake failure
+----
+
+[IMPORTANT]
+====
+The web service just went "down" for every post-quantum client — even though the RHEL host,
+OpenSSL, and nginx are all perfectly capable of post-quantum TLS. The problem is entirely in
+*Bill's server configuration*.
+====
+
+== Step 3 — Look more closely with openssl
+
+`curl` tells you the connection failed. `openssl s_client` tells you *why*. Ask it to require the
+post-quantum group and read the error:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>&1 | grep -iE "alert|handshake|failure|group"
+----
+
+There is *no* `Negotiated TLS1.3 group` line, because no handshake completed. The client offered
+only `X25519MLKEM768`; the server offered only `X25519`; with no group in common, TLS has no
+choice but to abort.
+
+[NOTE]
+====
+*From: Grace (Senior Sysadmin)*
+
+Hey — saw the security team's ticket. Yeah, this is Bill's doing.
+
+When the client says "I will *only* do post-quantum key exchange" and the server says "I will
+*only* do classical X25519," there is nothing they can agree on, so the TLS handshake fails. It's
+the cryptographic equivalent of two people who refuse to speak the same language.
+
+The fix is not on the client — the client is doing the right thing by demanding post-quantum. The
+fix is on the *server*. Remember that `ssl_ecdh_curve X25519;` line in
+`/etc/nginx/conf.d/pqc-web.conf`? That's the whole problem. The server needs to *also* offer the
+post-quantum group.
+
+Before you change anything, check the service logs — `sudo journalctl -u nginx` — so you get used
+to reading them. Then meet me in the next module and we'll fix the config together.
+
+-Grace
+====
+
+== Step 4 — Read the service logs
+
+Get into the habit of checking the service journal when something breaks:
+
+[source,bash,role=execute]
+----
+sudo journalctl -u nginx --no-pager -n 20
+----
+
+TLS handshake failures are negotiated and rejected at the protocol layer, so you may not see a
+dramatic error here — which is itself a useful lesson: a "running" service can still be refusing
+every secure client. The real diagnosis came from the `openssl s_client` output above.
+
+Continue to the next module to fix the server configuration.

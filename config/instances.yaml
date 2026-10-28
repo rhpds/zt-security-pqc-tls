@@ -1,27 +1,13 @@
 ---
-# Project Zero instance definitions.
-# See https://github.com/rhpds/lab_zero_touch_template for reference.
-containers: []
 virtualmachines:
-  - name: "server"
-    image: "rhel-10.0"
+  - name: "rhel"
+    image: "rhel-10-1-04-15-26"
+    bootloader: efi
     memory: "4G"
-    cores: 2
-    image_size: "30G"
+    cores: 1
+    image_size: "40G"
     tags:
       - key: "AnsibleGroup"
         value: "bastions"
     networks:
       - default
-      - secondary
-  - name: "client"
-    image: "rhel-10.0"
-    memory: "4G"
-    cores: 2
-    image_size: "30G"
-    tags:
-      - key: "AnsibleGroup"
-        value: "clients"
-    networks:
-      - default
-      - secondary

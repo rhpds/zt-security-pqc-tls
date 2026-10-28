@@ -1,0 +1,96 @@
+= Deploy the Web App as a Service
+
+Super-Business runs its secure portal with *nginx*. In this module you will bring it up as a
+*systemd service* on `rhel` and serve it over HTTPS. Right now it uses *classical* TLS — that is
+our baseline before we bring post-quantum into the picture.
+
+nginx has already been installed and configured for you; the service just needs to be started.
+
+== Step 1 — Look at the server configuration
+
+The TLS configuration lives in `/etc/nginx/conf.d/pqc-web.conf`. Print it:
+
+[source,bash,role=execute]
+----
+cat /etc/nginx/conf.d/pqc-web.conf
+----
+
+Notice this line:
+
+[source,nginx]
+----
+ssl_ecdh_curve      X25519;
+----
+
+`ssl_ecdh_curve` tells nginx exactly which TLS key-exchange groups it is willing to offer. Manager
+Bill pinned it to the single classical group `X25519` last year. Keep that line in mind — it
+becomes important soon.
+
+== Step 2 — Test the configuration
+
+Always validate nginx's configuration before starting or reloading it:
+
+[source,bash,role=execute]
+----
+sudo nginx -t
+----
+
+You should see `syntax is ok` and `test is successful`.
+
+== Step 3 — Start the service
+
+Enable and start the `nginx` service so it runs now and on every boot:
+
+[source,bash,role=execute]
+----
+sudo systemctl enable --now nginx
+----
+
+Confirm it is active:
+
+[source,bash,role=execute]
+----
+sudo systemctl status nginx --no-pager
+----
+
+You should see `active (running)`.
+
+== Step 4 — Connect to the web application
+
+Fetch the page over HTTPS. Because the certificate is self-signed for this lab, use `-k` to skip
+certificate verification:
+
+[source,bash,role=execute]
+----
+curl -k https://localhost/
+----
+
+You should see the *Super-Business Secure Portal* HTML. The web service is live over TLS.
+
+== Step 5 — See which key exchange was negotiated
+
+`curl` confirms the app works, but to see the *key-exchange group* that TLS actually negotiated,
+use `openssl s_client` and filter for the group line:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 2>/dev/null | grep "Negotiated TLS1.3 group"
+----
+
+You should see:
+
+[source,text]
+----
+Negotiated TLS1.3 group: X25519
+----
+
+[NOTE]
+====
+`X25519` is a strong *classical* key exchange — but it offers *no* quantum protection. A recorded
+session using it is exactly what a "harvest now, decrypt later" attacker is hoping for. Even
+though this RHEL 10 host is perfectly capable of post-quantum TLS, Bill's server configuration is
+offering only the classical group.
+
+In the next module you will act as a security-conscious client and *require* post-quantum key
+exchange — and discover what Bill's configuration does to that requirement.
+====

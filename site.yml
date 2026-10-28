@@ -1,14 +1,13 @@
 ---
 site:
-  title: My Project
-  url: https://github.com/rhpds/my-project
-  start_page: modules::index.adoc
+  title: "Post-Quantum TLS on Red Hat Enterprise Linux 10"
+  url: https://github.com/rhpds/showroom_template_zero
+  start_page: modules::module-01.adoc
 
 content:
   sources:
-    - url: .
+    - url: ./
       start_path: content
-
 ui:
   bundle:
     url: https://github.com/rhpds/nookbag-bundle/releases/download/v0.0.3/ui-bundle.zip
@@ -16,3 +15,6 @@ ui:
 
 output:
   dir: ./www
+
+runtime:
+  cache_dir: ./.cache/antora

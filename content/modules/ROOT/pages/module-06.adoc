@@ -1,0 +1,113 @@
+= Require Post-Quantum TLS
+
+Your server now offers *both* post-quantum and classical key exchange, which is perfect for a
+migration. But for a high-value service you may want to go further and *mandate* post-quantum key
+exchange, so that no client can fall back to a quantum-vulnerable algorithm. In this capstone you
+will configure the server to offer *only* `X25519MLKEM768`, then verify it.
+
+[IMPORTANT]
+====
+Requiring post-quantum key exchange means *older clients that cannot do PQC will be refused*. That
+is the intended behavior for a hardened service — but make sure your real-world clients are
+post-quantum-capable before enforcing it in production.
+====
+
+== Step 1 — Require the post-quantum group only
+
+Edit `/etc/nginx/conf.d/pqc-web.conf` so `ssl_ecdh_curve` lists *only* the post-quantum hybrid
+group. You can edit it by hand, or run:
+
+[source,bash,role=execute]
+----
+sudo sed -i 's|ssl_ecdh_curve.*|ssl_ecdh_curve X25519MLKEM768;|' /etc/nginx/conf.d/pqc-web.conf
+----
+
+Confirm the change:
+
+[source,bash,role=execute]
+----
+grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
+----
+
+It should read `ssl_ecdh_curve X25519MLKEM768;` — no classical fallback.
+
+== Step 2 — Test and apply the change
+
+[source,bash,role=execute]
+----
+sudo nginx -t
+----
+
+[source,bash,role=execute]
+----
+sudo systemctl reload nginx
+----
+
+== Step 3 — Verify a post-quantum client still works
+
+[source,bash,role=execute]
+----
+curl -k --curves X25519MLKEM768 https://localhost/
+----
+
+You get the portal HTML — post-quantum clients are served.
+
+Prove the negotiated group:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+----
+
+It prints `Negotiated TLS1.3 group: X25519MLKEM768`.
+
+== Step 4 — Verify a classical-only client is now rejected
+
+Now try to connect using *only* the classical `X25519` group. This time it must *fail*, because
+the server no longer offers any classical option:
+
+[source,bash,role=execute]
+----
+curl -k --curves X25519 https://localhost/
+----
+
+You should see a handshake failure, similar to:
+
+[source,text]
+----
+curl: (35) OpenSSL/3.5.x: error:0A000410:SSL routines::sslv3 alert handshake failure
+----
+
+Confirm the reason with openssl:
+
+[source,bash,role=execute]
+----
+echo | openssl s_client -connect localhost:443 -groups X25519 2>&1 | grep -iE "alert|handshake|failure"
+----
+
+[IMPORTANT]
+====
+That rejection is the goal. Your web service now *requires* post-quantum key exchange: every HTTPS
+session to it is protected against "harvest now, decrypt later," and quantum-vulnerable fallbacks
+are refused.
+====
+
+== You did it
+
+On Red Hat Enterprise Linux 10 you have:
+
+* Understood the quantum threat and why HTTPS needs post-quantum protection *now*.
+* Confirmed PQC for TLS is built into OpenSSL 3.5 and the `DEFAULT` crypto-policy (`X25519MLKEM768`).
+* Deployed a real web application as an *nginx systemd service* over HTTPS.
+* Watched a post-quantum requirement *break* a server that was pinned to classical key exchange.
+* Diagnosed the problem and fixed the server to offer the post-quantum hybrid group.
+* Hardened the server to *require* post-quantum key exchange and verified classical clients are refused.
+
+[TIP]
+====
+*Taking this further:* the same `ssl_ecdh_curve X25519MLKEM768;` idea applies to Apache httpd
+(via `SSLOpenSSLConfCmd Groups x25519mlkem768`) and to reverse proxies and load balancers. For a
+staged rollout, prefer `X25519MLKEM768:X25519` (offer PQC, allow classical) until every client is
+post-quantum-capable, then drop the classical fallback. To relax the requirement again, restore
+the fallback in `pqc-web.conf` and run `sudo systemctl reload nginx`.
+====

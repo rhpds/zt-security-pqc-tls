@@ -1,0 +1,120 @@
+= Welcome to Enabling RHEL Security: Post-Quantum TLS 101
+:toc:
+:icons: font
+:experimental:
+
+## Step 1: About This Lab
+
+== Objective
+
+By the end of this guided lab exercise, you will be able to:
+
+* Explain the quantum threat to cryptography and "harvest now, decrypt later."
+* Identify the post-quantum algorithms standardized by NIST (ML-KEM, ML-DSA, SLH-DSA).
+* Confirm that post-quantum cryptography is already available for TLS on Red Hat Enterprise Linux 10.
+* Deploy a web application as an *nginx systemd service* and serve it over HTTPS.
+* Watch a post-quantum requirement *break* the connection to that web server, then diagnose and fix it.
+* Harden the web server so that it *requires* post-quantum TLS key exchange.
+
+== Introduction
+
+Learn how to protect web traffic (HTTPS/TLS) against future quantum computers using Red Hat
+Enterprise Linux 10 — by breaking a web app on purpose and then fixing it.
+
+Almost every secure connection you use today — HTTPS, VPNs, and SSH — relies on public-key
+cryptography such as RSA and elliptic curve. A sufficiently powerful *quantum computer* could
+break those algorithms. The threat is not only in the future: in a *"harvest now, decrypt
+later"* attack, an adversary records your encrypted traffic today and simply waits for a
+quantum computer to decrypt it later. Any secret that must stay confidential for years is
+already at risk.
+
+To address this, in 2024 NIST standardized a new family of *post-quantum* algorithms built on
+math problems that neither classical nor quantum computers are known to solve efficiently:
+*ML-KEM* (FIPS 203, key exchange), *ML-DSA* (FIPS 204, signatures), and *SLH-DSA* (FIPS 205,
+signatures).
+
+Red Hat Enterprise Linux 10 is built to be *post-quantum capable*: these algorithms ship in its
+core cryptographic libraries, including *OpenSSL 3.5*, which powers TLS for web servers like
+nginx and Apache. In this lab you will use that capability to make HTTPS — the protocol behind
+every web application — resistant to the quantum threat.
+
+[NOTE]
+====
+This lab runs on *RHEL 10.1 or later*, where the post-quantum TLS key-exchange group is part of
+the `DEFAULT` system-wide crypto-policy. That means the building blocks for PQC are *already on*
+— there are no preview packages to install. But as you will see, a web server that was
+configured without PQC in mind will still *break* the moment a client insists on post-quantum
+security. You will deploy such a server, watch it break, and fix it.
+====
+
+=== A note on our cast of characters
+
+This lab features two colleagues from *Super-Business*:
+
+* *Manager Bill* — a middle-manager who "used to do your job." He set up the company web server
+  last year and, chasing a performance tip from a blog, pinned its TLS configuration to a single
+  classical algorithm. That decision is about to cause problems.
+* *Sysadmin Grace* — a seasoned administrator who will leave you helpful notes when things break.
+
+=== Lab Modules
+
+. *About This Lab* — You are here: the quantum threat, PQC for TLS, and the lab environment.
+. *Your Post-Quantum Foundation* — Confirm PQC for TLS is available in OpenSSL and the crypto-policy.
+. *Deploy the Web App as a Service* — Run Super-Business's web server as an nginx systemd service over HTTPS.
+. *Turn On PQC — Watch It Break* — Require post-quantum TLS from the client and watch the app fail.
+. *Diagnose and Fix* — Read the logs, fix the server's TLS configuration, and restore service with PQC.
+. *Require Post-Quantum TLS* — Harden the server so it *only* accepts post-quantum key exchange.
+
+== Lab Environment
+
+As part of this lab you will have access to 1 machine:
+
+* rhel
+
+* **Operating System**: Red Hat Enterprise Linux 10
+* **Estimated Time**: Approximately 40 minutes
+
+You will work entirely from *rhel* (your bastion). The web application runs *on rhel* as the
+`nginx` systemd service, and you connect to it over HTTPS at `https://localhost/`.
+
+=== Environment Diagram
+
+[source,text]
+----
+                             Lab Environment (host: rhel)
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                                                                    │
+    │   curl / openssl                      nginx.service (systemd)      │
+    │   ┌────────────┐     TLS 1.3          ┌───────────────────────┐    │
+    │   │  client    │ ──── HTTPS ────────▶ │  nginx                │    │
+    │   │            │    localhost:443     │  (OpenSSL 3.5)        │    │
+    │   └────────────┘                      └───────────────────────┘    │
+    │                                                                    │
+    └──────────────────────────────────────────────────────────────────┘
+----
+
+You will have a couple of accounts you will have access to on *rhel*:
+
+* rhel
+* root
+
+[NOTE]
+====
+*Lab Note: If Using Red Hat Demo System (RHPDS)*
+
+The terminal window to your right is already logged into the lab environment as the `rhel` user
+on the *rhel* host via SSH. All steps of this lab are performed from the `rhel` machine.
+
+When you follow the next steps, you will have instructions followed by a small box with text
+that is meant to be used in the terminal. In the upper right corner there will be a couple of
+symbols. It should say something like "BASH", an icon of a clipboard, and an icon of a terminal.
+
+You should also be able to click the terminal icon and the command is then auto-typed into the
+machine terminal.
+
+Alternatively, you should be able to click the clipboard icon in the code box to copy the
+command, and you will either use the middle mouse button or right click and paste. The keyboard
+shortcuts for copy and paste (`Ctrl+C` and `Ctrl+V`) won't work in this environment.
+
+To move to the next step, click the *Next* button.
+====
