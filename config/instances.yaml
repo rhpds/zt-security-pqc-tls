@@ -27,4 +27,4 @@ virtualmachines:
         service: webapp
         targetPort: 443
         tls: true
-        tls_termination: Passthrough
+        tls_termination: passthrough
