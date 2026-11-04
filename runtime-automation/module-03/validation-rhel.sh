@@ -20,7 +20,7 @@ if [ "$CODE" != "200" ]; then
 fi
 
 # 3) The negotiated key exchange is the classical X25519 (baseline, pre-PQC).
-if ! echo | openssl s_client -connect localhost:443 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'; then
+if [ "$(echo | openssl s_client -connect localhost:443 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+')" != "X25519" ]; then
     echo "FAIL: the server did not negotiate the classical X25519 group as expected"
     echo "HINT: in this baseline module the server should offer only X25519 (see /etc/nginx/conf.d/pqc-web.conf)."
     exit 1

@@ -21,14 +21,14 @@ if [ "$CODE" != "200" ]; then
 fi
 
 # 3) The negotiated group is actually the post-quantum hybrid.
-if ! echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -q 'Negotiated TLS1.3 group: X25519MLKEM768'; then
+if [ "$(echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+')" != "X25519MLKEM768" ]; then
     echo "FAIL: the server did not negotiate X25519MLKEM768"
     echo "HINT: confirm 'ssl_ecdh_curve X25519MLKEM768:X25519;' is set and nginx was reloaded."
     exit 1
 fi
 
 # 4) The classical fallback still works.
-if ! echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep -q 'Negotiated TLS1.3 group: X25519$'; then
+if [ "$(echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+')" != "X25519" ]; then
     echo "FAIL: the classical X25519 fallback no longer works"
     echo "HINT: in this module keep both groups: 'ssl_ecdh_curve X25519MLKEM768:X25519;'."
     exit 1

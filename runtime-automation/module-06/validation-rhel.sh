@@ -14,7 +14,7 @@ if [ "$CODE" != "200" ]; then
 fi
 
 # 2) The negotiated group is the post-quantum hybrid.
-if ! echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -q 'Negotiated TLS1.3 group: X25519MLKEM768'; then
+if [ "$(echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+')" != "X25519MLKEM768" ]; then
     echo "FAIL: the server did not negotiate X25519MLKEM768"
     echo "HINT: confirm 'ssl_ecdh_curve X25519MLKEM768;' and reload nginx."
     exit 1
