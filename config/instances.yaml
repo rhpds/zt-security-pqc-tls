@@ -11,20 +11,23 @@ virtualmachines:
         value: "bastions"
     networks:
       - default
-    # Expose the VM's nginx (HTTPS/443) so the lab's "Web App" tab can reach it.
-    # The app terminates its own TLS (and does the PQC key exchange), so the route
-    # must PASS TLS THROUGH to the VM rather than terminating at the edge.
+    # Expose the web app for the "Web App" browser tab via an EDGE route.
+    # This platform's route role injects custom headers, which OpenShift allows
+    # only on edge/re-encrypt routes (NOT passthrough). An edge route terminates
+    # TLS at the OpenShift router (trusted cert, no browser warning) and forwards
+    # plain HTTP to the VM. So nginx serves a side HTTP port (8080) just for the
+    # tab; the HTTPS/443 server stays dedicated to the PQC terminal exercises.
     services:
       - name: webapp
         ports:
-          - port: 443
+          - port: 8080
             protocol: TCP
-            targetPort: 443
+            targetPort: 8080
             name: webapp
     routes:
       - name: webapp
         host: webapp
         service: webapp
-        targetPort: 443
+        targetPort: 8080
         tls: true
-        tls_termination: passthrough
+        tls_termination: Edge

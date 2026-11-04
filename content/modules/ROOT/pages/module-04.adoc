@@ -56,7 +56,8 @@ post-quantum group and read the error:
 echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>&1 | grep -iE "alert|handshake|failure|group"
 ----
 
-There is *no* `Negotiated TLS1.3 group` line, because no handshake completed. The client offered
+There is *no* `Peer Temp Key` line, because no handshake completed — the two sides never agreed on a
+key-exchange group, so no ephemeral key was ever exchanged. The client offered
 only `X25519MLKEM768`; the server offered only `X25519`; with no group in common, TLS has no
 choice but to abort.
 

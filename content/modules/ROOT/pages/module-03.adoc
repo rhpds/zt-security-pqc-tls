@@ -72,27 +72,28 @@ You should see the *Super-Business Secure Portal* HTML. The web service is live 
 
 [TIP]
 ====
-You can also open the *Web App* tab at the top of this lab to view the portal in a browser.
-Because the lab uses a throwaway self-signed certificate, your browser will warn you the first
-time — accept/continue to proceed. (In the final module, when the server *requires* post-quantum
-key exchange, the page will load only in a browser that supports it.)
+Once the service is running, you can open the *Web App* tab at the top of this lab to view the
+portal in your browser. (That tab is served over a separate internal HTTP port for display only —
+the post-quantum key exchange you harden in the next modules is demonstrated from the terminal with
+`curl` and `openssl`, which show you the exact group that was negotiated.)
 ====
 
 == Step 5 — See which key exchange was negotiated
 
 `curl` confirms the app works, but to see the *key-exchange group* that TLS actually negotiated,
-use `openssl s_client` and filter for the group line:
+use `openssl s_client` and read the `Peer Temp Key` line (the ephemeral key-exchange key the server
+used):
 
 [source,bash,role=execute]
 ----
-echo | openssl s_client -connect localhost:443 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 ----
 
 You should see:
 
 [source,text]
 ----
-Negotiated TLS1.3 group: X25519
+X25519
 ----
 
 [NOTE]

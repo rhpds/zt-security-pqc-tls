@@ -85,14 +85,14 @@ Confirm the key-exchange group on the wire:
 
 [source,bash,role=execute]
 ----
-echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 ----
 
 You should now see:
 
 [source,text]
 ----
-Negotiated TLS1.3 group: X25519MLKEM768
+X25519MLKEM768
 ----
 
 [IMPORTANT]
@@ -109,7 +109,7 @@ reach the site:
 
 [source,bash,role=execute]
 ----
-echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 ----
 
 This negotiates `X25519` — classical, but still functional. Your server now supports *both*

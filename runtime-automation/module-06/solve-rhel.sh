@@ -12,7 +12,7 @@ sleep 1
 echo "--- post-quantum client, should succeed ---"
 curl -k --curves X25519MLKEM768 https://localhost/
 echo "--- negotiated group (should be X25519MLKEM768) ---"
-echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 echo "--- classical-only client, should be REFUSED ---"
 curl -k --curves X25519 https://localhost/ || echo "classic-only client refused, as expected"
 

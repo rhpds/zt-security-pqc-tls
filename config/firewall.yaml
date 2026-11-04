@@ -4,9 +4,10 @@ egress:
   - ports:
       - protocol: TCP
         port: 443
-# Allow inbound HTTPS so the "Web App" tab (OpenShift route -> VM nginx on 443)
-# can reach the web server.
+# Allow inbound HTTP on 8080 so the "Web App" tab (OpenShift edge route -> VM
+# nginx HTTP on 8080) can reach the web server. The HTTPS/443 server used by the
+# PQC terminal exercises is reached over loopback and needs no ingress rule.
 ingress:
   - ports:
       - protocol: TCP
-        port: 443
+        port: 8080

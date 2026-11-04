@@ -59,10 +59,10 @@ Prove the negotiated group:
 
 [source,bash,role=execute]
 ----
-echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 ----
 
-It prints `Negotiated TLS1.3 group: X25519MLKEM768`.
+It prints `X25519MLKEM768`.
 
 == Step 4 — Verify a classical-only client is now rejected
 

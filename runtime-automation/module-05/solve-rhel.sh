@@ -13,9 +13,9 @@ sleep 1
 echo "--- post-quantum client, should now succeed ---"
 curl -k --curves X25519MLKEM768 https://localhost/
 echo "--- negotiated group (should be X25519MLKEM768) ---"
-echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 echo "--- classical client still works (fallback) ---"
-echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 -groups X25519 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 
 echo "Solved module-05" >> /tmp/progress.log
 exit 0

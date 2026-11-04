@@ -52,6 +52,22 @@ server {
 EOF
 chmod 644 /etc/nginx/conf.d/pqc-web.conf
 
+# A plain-HTTP server on 8080 that serves the same page, used ONLY by the "Web
+# App" browser tab (reached through an OpenShift edge route). This is kept in a
+# separate file so the participant-edited pqc-web.conf stays focused on the
+# HTTPS/PQC server. Port 8080 is in SELinux's http_port_t, so no port change is
+# needed.
+cat > /etc/nginx/conf.d/webapp-tab.conf << 'EOF'
+server {
+    listen      8080;
+    server_name _;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+}
+EOF
+chmod 644 /etc/nginx/conf.d/webapp-tab.conf
+
 # The web page.
 cat > /usr/share/nginx/html/index.html << 'EOF'
 <!doctype html>

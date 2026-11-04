@@ -9,7 +9,7 @@ systemctl enable --now nginx
 sleep 1
 systemctl status nginx --no-pager
 curl -k https://localhost/
-echo | openssl s_client -connect localhost:443 2>/dev/null | grep "Negotiated TLS1.3 group"
+echo | openssl s_client -connect localhost:443 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
 
 echo "Solved module-03" >> /tmp/progress.log
 exit 0
