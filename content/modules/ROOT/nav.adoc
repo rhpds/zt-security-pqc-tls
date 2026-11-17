@@ -1,1 +1,6 @@
-* xref:index.adoc[Lab Overview]
+* xref:module-01.adoc[About This Lab]
+* xref:module-02.adoc[Your Post-Quantum Foundation]
+* xref:module-03.adoc[Deploy the Web App as a Service]
+* xref:module-04.adoc[Turn On PQC — Watch It Break]
+* xref:module-05.adoc[Diagnose and Fix]
+* xref:module-06.adoc[Require Post-Quantum TLS]
