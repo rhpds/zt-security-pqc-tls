@@ -80,21 +80,6 @@ curl -k --curves X25519MLKEM768 https://localhost/
 This time you get the *Super-Business Secure Portal* HTML back. The web service is reachable by
 post-quantum clients again.
 
-== Step 5.8 — Prove post-quantum was actually negotiated
-
-Confirm the key-exchange group on the wire:
-
-[source,bash,role=execute]
-----
-echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/null | grep -oP 'Peer Temp Key: \K[^,]+'
-----
-
-You should now see:
-
-[source,text]
-----
-X25519MLKEM768
-----
 
 [IMPORTANT]
 ====
@@ -103,7 +88,7 @@ exchange. A session recorded now cannot be decrypted later by a quantum computer
 session key was protected by ML-KEM-768.
 ====
 
-== Step 5.9 — Confirm classical clients still work
+== Step 5.8 — Confirm classical clients still work
 
 Because you kept `X25519` as a fallback, an older client that cannot do post-quantum can still
 reach the site:
