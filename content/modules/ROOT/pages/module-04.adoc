@@ -1,7 +1,6 @@
-= Turn On PQC — Watch It Break
+= Step 4 — Turn On PQC — Watch It Break
 
 [.lead]
-*Step 4 — Turn On PQC — Watch It Break*
 
 Super-Business's security team just adopted a new rule: *all* internal HTTPS connections must use
 post-quantum key exchange to defend against "harvest now, decrypt later." Their health-check tool
@@ -10,7 +9,7 @@ now connects while *requiring* the post-quantum group `X25519MLKEM768`.
 In this module you play the part of that post-quantum-requiring client — and watch it fail against
 Bill's server.
 
-== Step 1 — Confirm the app still works for a normal client
+== Step 4.1 — Confirm the app still works for a normal client
 
 First, prove the web service is healthy for an ordinary (classical) client:
 
@@ -21,7 +20,7 @@ curl -k https://localhost/
 
 You still get the portal HTML. So far, so good.
 
-== Step 2 — Connect while *requiring* post-quantum key exchange
+== Step 4.2 — Connect while *requiring* post-quantum key exchange
 
 Now connect the way the security team's health check does. The `--curves` option tells the client
 which key-exchange group(s) it is willing to use — here, *only* the post-quantum
@@ -46,7 +45,7 @@ OpenSSL, and nginx are all perfectly capable of post-quantum TLS. The problem is
 *Bill's server configuration*.
 ====
 
-== Step 3 — Look more closely with openssl
+== Step 4.3 — Look more closely with openssl
 
 `curl` tells you the connection failed. `openssl s_client` tells you *why*. Ask it to require the
 post-quantum group and read the error:
@@ -82,7 +81,7 @@ to reading them. Then meet me in the next module and we'll fix the config togeth
 -Grace
 ====
 
-== Step 4 — Read the service logs
+== Step 4.4 — Read the service logs
 
 Get into the habit of checking the service journal when something breaks:
 

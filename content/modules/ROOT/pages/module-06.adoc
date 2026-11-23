@@ -1,7 +1,6 @@
-= Require Post-Quantum TLS
+= Step 6 Require Post-Quantum TLS
 
 [.lead]
-*Step 6 — Require Post-Quantum TLS*
 
 Your server now offers *both* post-quantum and classical key exchange, which is perfect for a
 migration. But for a high-value service you may want to go further and *mandate* post-quantum key
@@ -15,7 +14,7 @@ is the intended behavior for a hardened service — but make sure your real-worl
 post-quantum-capable before enforcing it in production.
 ====
 
-== Step 1 — Require the post-quantum group only
+== Step 6.1 — Require the post-quantum group only
 
 Edit `/etc/nginx/conf.d/pqc-web.conf` so `ssl_ecdh_curve` lists *only* the post-quantum hybrid
 group. You can edit it by hand, or run:
@@ -25,7 +24,7 @@ group. You can edit it by hand, or run:
 sudo sed -i 's|ssl_ecdh_curve.*|ssl_ecdh_curve X25519MLKEM768;|' /etc/nginx/conf.d/pqc-web.conf
 ----
 
-Confirm the change:
+== Step 6.2 Confirm the change
 
 [source,bash,role=execute]
 ----
@@ -34,19 +33,21 @@ grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
 
 It should read `ssl_ecdh_curve X25519MLKEM768;` — no classical fallback.
 
-== Step 2 — Test and apply the change
+== Step 6.3 — Test and apply the change
 
 [source,bash,role=execute]
 ----
 sudo nginx -t
 ----
 
+== Step 6.4 Reload nginx service
+
 [source,bash,role=execute]
 ----
 sudo systemctl reload nginx
 ----
 
-== Step 3 — Verify a post-quantum client still works
+== Step 6.5 — Verify a post-quantum client still works
 
 [source,bash,role=execute]
 ----
@@ -55,7 +56,7 @@ curl -k --curves X25519MLKEM768 https://localhost/
 
 You get the portal HTML — post-quantum clients are served.
 
-Prove the negotiated group:
+== Step 6.6 Prove the negotiated group
 
 [source,bash,role=execute]
 ----
@@ -64,7 +65,7 @@ echo | openssl s_client -connect localhost:443 -groups X25519MLKEM768 2>/dev/nul
 
 It prints `X25519MLKEM768`.
 
-== Step 4 — Verify a classical-only client is now rejected
+== Step 6.7 — Verify a classical-only client is now rejected
 
 Now try to connect using *only* the classical `X25519` group. This time it must *fail*, because
 the server no longer offers any classical option:
@@ -79,13 +80,6 @@ You should see a handshake failure, similar to:
 [source,text]
 ----
 curl: (35) OpenSSL/3.5.x: error:0A000410:SSL routines::sslv3 alert handshake failure
-----
-
-Confirm the reason with openssl:
-
-[source,bash,role=execute]
-----
-echo | openssl s_client -connect localhost:443 -groups X25519 2>&1 | grep -iE "alert|handshake|failure"
 ----
 
 [IMPORTANT]

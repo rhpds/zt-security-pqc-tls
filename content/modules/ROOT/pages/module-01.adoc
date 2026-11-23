@@ -4,7 +4,7 @@
 :experimental:
 
 [.lead]
-*Step 1 — About This Lab*
+= Step 1: About This Lab
 
 == Objective
 
@@ -41,7 +41,7 @@ every web application — resistant to the quantum threat.
 
 [NOTE]
 ====
-This lab runs on *RHEL 10.1 or later*, where the post-quantum TLS key-exchange group is part of
+This lab runs on *RHEL 10.2 or later*, where the post-quantum TLS key-exchange group is part of
 the `DEFAULT` system-wide crypto-policy. That means the building blocks for PQC are *already on*
 — there are no preview packages to install. But as you will see, a web server that was
 configured without PQC in mind will still *break* the moment a client insists on post-quantum
@@ -72,7 +72,7 @@ As part of this lab you will have access to 1 machine:
 
 * rhel
 
-* **Operating System**: Red Hat Enterprise Linux 10
+* **Operating System**: Red Hat Enterprise Linux 10.2
 * **Estimated Time**: Approximately 40 minutes
 
 You will work entirely from *rhel* (your bastion). The web application runs *on rhel* as the
@@ -84,13 +84,13 @@ You will work entirely from *rhel* (your bastion). The web application runs *on 
 ----
                              Lab Environment (host: rhel)
     ┌──────────────────────────────────────────────────────────────────┐
-    │                                                                    │
-    │   curl / openssl                      nginx.service (systemd)      │
-    │   ┌────────────┐     TLS 1.3          ┌───────────────────────┐    │
-    │   │  client    │ ──── HTTPS ────────▶ │  nginx                │    │
-    │   │            │    localhost:443     │  (OpenSSL 3.5)        │    │
-    │   └────────────┘                      └───────────────────────┘    │
-    │                                                                    │
+    │                                                                  │
+    │   curl / openssl                      nginx.service (systemd)    │
+    │   ┌────────────┐     TLS 1.3          ┌───────────────────────┐  │
+    │   │  client    │ ──── HTTPS ────────▶│  nginx                │  │
+    │   │            │    localhost:443     │  (OpenSSL 3.5)        │  │
+    │   └────────────┘                      └───────────────────────┘  │
+    │                                                                  │
     └──────────────────────────────────────────────────────────────────┘
 ----
 
@@ -98,6 +98,18 @@ You will have a couple of accounts you will have access to on *rhel*:
 
 * rhel
 * root
+
+Username:
+[source,bash]
+----
+rhel
+----
+
+Password:
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+{bastion_ssh_password}
+----
 
 [NOTE]
 ====

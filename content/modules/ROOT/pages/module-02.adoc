@@ -1,7 +1,7 @@
-= Your Post-Quantum Foundation
+= Step 2 Your Post-Quantum Foundation
 
 [.lead]
-*Step 2 — Your Post-Quantum Foundation*
+
 
 Before deploying anything, let's confirm that post-quantum cryptography for TLS is already
 available on this RHEL 10 system. On RHEL 10.1 and later you do *not* install anything or flip a
@@ -14,7 +14,7 @@ preview switch — the building blocks are part of the standard configuration.
 cat /etc/redhat-release
 ----
 
-== Step 2 — Check the OpenSSL version
+== Step 2.2 — Check the OpenSSL version
 
 TLS on RHEL is powered by *OpenSSL*. Post-quantum key exchange for TLS arrived in OpenSSL 3.5,
 which ships in RHEL 10. Confirm it:
@@ -26,7 +26,7 @@ openssl version
 
 You should see `OpenSSL 3.5` (or later).
 
-== Step 3 — Look at the system-wide crypto policy
+== Step 2.3 — Look at the system-wide crypto policy
 
 RHEL controls which cryptographic algorithms every compliant application may use through a
 single system-wide setting called the *crypto-policy*. Show it:
@@ -39,7 +39,7 @@ update-crypto-policies --show
 You should see `DEFAULT`. On RHEL 10.1+, the `DEFAULT` policy *already includes* the post-quantum
 TLS key-exchange group — there is nothing extra to enable at the system level.
 
-== Step 4 — See which TLS key-exchange groups OpenSSL supports
+== Step 2.4 — See which TLS key-exchange groups OpenSSL supports
 
 In TLS 1.3, the client and server agree on a shared session key using a *key-exchange group*.
 Ask OpenSSL which groups it offers, and filter for the post-quantum entry:

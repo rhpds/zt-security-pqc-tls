@@ -1,7 +1,7 @@
 ---
 virtualmachines:
   - name: "rhel"
-    image: "rhel-10-1-04-15-26"
+    image: "rhel-10-2-eus-06-08-26"
     bootloader: efi
     memory: "4G"
     cores: 1

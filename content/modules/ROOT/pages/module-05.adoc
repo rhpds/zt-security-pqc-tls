@@ -1,13 +1,12 @@
-= Diagnose and Fix
+= Step 5 — Diagnose and Fix
 
 [.lead]
-*Step 5 — Diagnose and Fix*
 
 You confirmed the diagnosis: the server offers only the classical `X25519` group, so any client
 that *requires* post-quantum key exchange is turned away. Time to fix Bill's configuration so the
 server *also* offers the post-quantum hybrid group — without breaking classical clients.
 
-== Step 1 — Review the broken setting
+== Step 5.1 — Review the broken setting
 
 Look again at the server's TLS group configuration:
 
@@ -19,7 +18,7 @@ grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
 It reads `ssl_ecdh_curve X25519;` — classical only. We want the server to offer the post-quantum
 hybrid group `X25519MLKEM768` *first*, and keep `X25519` as a fallback for older clients.
 
-== Step 2 — Fix the configuration
+== Step 5.2 — Fix the configuration
 
 Edit `/etc/nginx/conf.d/pqc-web.conf` so the `ssl_ecdh_curve` line offers both groups. You can open
 it in an editor (`sudo vi /etc/nginx/conf.d/pqc-web.conf`), or run this command to do it for you:
@@ -29,14 +28,14 @@ it in an editor (`sudo vi /etc/nginx/conf.d/pqc-web.conf`), or run this command 
 sudo sed -i 's|ssl_ecdh_curve.*|ssl_ecdh_curve X25519MLKEM768:X25519;|' /etc/nginx/conf.d/pqc-web.conf
 ----
 
-Confirm the change:
+== Step 5.3 Confirm the change:
 
 [source,bash,role=execute]
 ----
 grep ssl_ecdh_curve /etc/nginx/conf.d/pqc-web.conf
 ----
 
-It should now read:
+== Step 5.4 It should now read:
 
 [source,nginx]
 ----
@@ -51,7 +50,7 @@ connect. This "hybrid, prefer PQC, allow classical fallback" posture is the reco
 roll out post-quantum TLS during a migration.
 ====
 
-== Step 3 — Test and reload the service
+== Step 5.5 — Test and reload the service
 
 Always test the configuration before applying it:
 
@@ -60,6 +59,8 @@ Always test the configuration before applying it:
 sudo nginx -t
 ----
 
+== Step 5.6 Check the configuration
+
 If it reports success, reload the service so nginx picks up the new configuration:
 
 [source,bash,role=execute]
@@ -67,7 +68,7 @@ If it reports success, reload the service so nginx picks up the new configuratio
 sudo systemctl reload nginx
 ----
 
-== Step 4 — Verify the post-quantum client now works
+== Step 5.7 — Verify the post-quantum client now works
 
 Repeat the post-quantum request that failed in the previous module:
 
@@ -79,7 +80,7 @@ curl -k --curves X25519MLKEM768 https://localhost/
 This time you get the *Super-Business Secure Portal* HTML back. The web service is reachable by
 post-quantum clients again.
 
-== Step 5 — Prove post-quantum was actually negotiated
+== Step 5.8 — Prove post-quantum was actually negotiated
 
 Confirm the key-exchange group on the wire:
 
@@ -102,7 +103,7 @@ exchange. A session recorded now cannot be decrypted later by a quantum computer
 session key was protected by ML-KEM-768.
 ====
 
-== Step 6 — Confirm classical clients still work
+== Step 5.9 — Confirm classical clients still work
 
 Because you kept `X25519` as a fallback, an older client that cannot do post-quantum can still
 reach the site:

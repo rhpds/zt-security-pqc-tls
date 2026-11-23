@@ -1,7 +1,7 @@
-= Deploy the Web App as a Service
+= Step 3 — Deploy the Web App as a Service
 
 [.lead]
-*Step 3 — Deploy the Web App as a Service*
+
 
 Super-Business runs its secure portal with *nginx*. In this module you will bring it up as a
 *systemd service* on `rhel` and serve it over HTTPS. Right now it uses *classical* TLS — that is
@@ -9,7 +9,7 @@ our baseline before we bring post-quantum into the picture.
 
 nginx has already been installed and configured for you; the service just needs to be started.
 
-== Step 1 — Look at the server configuration
+== Step 3.1 — Look at the server configuration
 
 The TLS configuration lives in `/etc/nginx/conf.d/pqc-web.conf`. Print it:
 
@@ -29,7 +29,7 @@ ssl_ecdh_curve      X25519;
 Bill pinned it to the single classical group `X25519` last year. Keep that line in mind — it
 becomes important soon.
 
-== Step 2 — Test the configuration
+== Step 3.2 — Test the configuration
 
 Always validate nginx's configuration before starting or reloading it:
 
@@ -40,7 +40,7 @@ sudo nginx -t
 
 You should see `syntax is ok` and `test is successful`.
 
-== Step 3 — Start the service
+== Step 3.3 — Start the service
 
 Enable and start the `nginx` service so it runs now and on every boot:
 
@@ -49,7 +49,7 @@ Enable and start the `nginx` service so it runs now and on every boot:
 sudo systemctl enable --now nginx
 ----
 
-Confirm it is active:
+== Step 3.4 — Confirm it is active:
 
 [source,bash,role=execute]
 ----
@@ -58,7 +58,7 @@ sudo systemctl status nginx --no-pager
 
 You should see `active (running)`.
 
-== Step 4 — Connect to the web application
+== Step 3.5 — Connect to the web application
 
 Fetch the page over HTTPS. Because the certificate is self-signed for this lab, use `-k` to skip
 certificate verification:
@@ -78,7 +78,7 @@ the post-quantum key exchange you harden in the next modules is demonstrated fro
 `curl` and `openssl`, which show you the exact group that was negotiated.)
 ====
 
-== Step 5 — See which key exchange was negotiated
+== Step 3.6 — See which key exchange was negotiated
 
 `curl` confirms the app works, but to see the *key-exchange group* that TLS actually negotiated,
 use `openssl s_client` and read the `Peer Temp Key` line (the ephemeral key-exchange key the server
