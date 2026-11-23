@@ -23,11 +23,4 @@ antora:
       label: "Require Post-Quantum TLS"
       solveButton: false
 
-tabs:
-  - name: ">_ terminal"
-    path: /wetty
-    port: 443
-  - name: "Web App"
-    url: https://localhost/
-    external: true
 

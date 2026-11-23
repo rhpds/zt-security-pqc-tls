@@ -70,13 +70,6 @@ curl -k https://localhost/
 
 You should see the *Super-Business Secure Portal* HTML. The web service is live over TLS.
 
-[TIP]
-====
-Once the service is running, you can open the *Web App* tab at the top of this lab to view the
-portal in your browser. (That tab is served over a separate internal HTTP port for display only —
-the post-quantum key exchange you harden in the next modules is demonstrated from the terminal with
-`curl` and `openssl`, which show you the exact group that was negotiated.)
-====
 
 == Step 3.6 — See which key exchange was negotiated
 
