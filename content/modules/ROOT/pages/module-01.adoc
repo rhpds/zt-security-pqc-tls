@@ -87,7 +87,7 @@ You will work entirely from *rhel* (your bastion). The web application runs *on 
     │                                                                  │
     │   curl / openssl                      nginx.service (systemd)    │
     │   ┌────────────┐     TLS 1.3          ┌───────────────────────┐  │
-    │   │  client    │ ──── HTTPS ────────▶│  nginx                │  │
+    │   │  client    │ ──── HTTPS ────────▶ │  nginx                │  │
     │   │            │    localhost:443     │  (OpenSSL 3.5)        │  │
     │   └────────────┘                      └───────────────────────┘  │
     │                                                                  │

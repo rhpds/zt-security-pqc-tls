@@ -28,6 +28,6 @@ tabs:
     path: /wetty
     port: 443
   - name: "Web App"
-    url: https://webapp-%GUID%.%DOMAIN%/
+    url: https://localhost/
     external: true
 
