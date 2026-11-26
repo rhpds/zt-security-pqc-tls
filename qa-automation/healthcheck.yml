@@ -1,15 +1,45 @@
 ---
-# HEALTHCHECK — Quick environment readiness check
-# Runs post-provisioning to verify the lab environment is functional.
-# Should complete in under 60 seconds.
-#
-# Exit 0 = healthy, non-zero = unhealthy.
+- ansible.builtin.import_playbook: inventory.yml
 
-- name: "Environment Health Check"
-  hosts: localhost
-  connection: local
+- name: "TLS readiness before the learner starts nginx"
+  hosts: qa_bastions
   gather_facts: false
+  any_errors_fatal: true
+  become: true
   tasks:
-    - name: "TODO: Implement health checks"
-      ansible.builtin.debug:
-        msg: "Replace this task with checks that verify the environment is ready"
+    - name: "Inspect the system-wide crypto policy"
+      ansible.builtin.command:
+        argv: ["update-crypto-policies", "--show"]
+      register: policy
+      changed_when: false
+    - name: "Inspect OpenSSL TLS groups"
+      ansible.builtin.command:
+        argv: ["openssl", "list", "-tls-groups"]
+      register: groups
+      changed_when: false
+    - name: "Validate the provisioned nginx configuration"
+      ansible.builtin.command:
+        argv: ["nginx", "-t"]
+      changed_when: false
+    - name: "Inspect the provisioned server configuration"
+      ansible.builtin.command:
+        argv: ["grep", "-E", "^[[:space:]]*ssl_ecdh_curve[[:space:]]+", "/etc/nginx/conf.d/pqc-web.conf"]
+      register: curve
+      changed_when: false
+    - name: "Check that nginx has not been started"
+      ansible.builtin.command:
+        argv: ["systemctl", "is-active", "nginx"]
+      register: nginx_state
+      changed_when: false
+      failed_when: false
+    - name: "Verify the learner's web page is provisioned"
+      ansible.builtin.command:
+        argv: ["grep", "-F", "Super-Business Secure Portal", "/usr/share/nginx/html/index.html"]
+      changed_when: false
+    - name: "Assert the clean classical-only server baseline"
+      ansible.builtin.assert:
+        that:
+          - "policy.stdout | trim == 'DEFAULT'"
+          - "'X25519MLKEM768' in groups.stdout"
+          - "curve.stdout.split() == ['ssl_ecdh_curve', 'X25519;']"
+          - "nginx_state.stdout | trim == 'inactive'"
