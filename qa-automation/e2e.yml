@@ -1,13 +1,123 @@
 ---
-# E2E — End-to-end test
-# Runs all module solve + validate sequences to verify the full lab
-# works from start to finish without manual intervention.
+- ansible.builtin.import_playbook: healthcheck.yml
 
-- name: "End-to-End Test"
-  hosts: localhost
-  connection: local
+- name: "Exercise all six TLS modules and restore nginx"
+  hosts: qa_bastions
   gather_facts: false
+  any_errors_fatal: true
+  become: true
   tasks:
-    - name: "TODO: Implement end-to-end test sequence"
-      ansible.builtin.debug:
-        msg: "Replace this task with your e2e test implementation"
+    - name: Save the original nginx file
+      ansible.builtin.slurp:
+        src: /etc/nginx/conf.d/pqc-web.conf
+      register: tls_original
+
+    - name: Test the complete TLS flow
+      block:
+        - name: "Module 3: start the configured web application"
+          ansible.builtin.command:
+            argv: ["systemctl", "start", "nginx"]
+        - name: "Module 3: fetch the application with normal negotiation"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "https://localhost/"]
+          register: initial
+          changed_when: false
+        - name: "Module 3: inspect the server's negotiated key exchange"
+          ansible.builtin.command:
+            argv: [timeout, "10", openssl, s_client, -connect, "localhost:443", -tls1_3]
+            stdin: ""
+          register: baseline_tls
+          changed_when: false
+
+        - name: "Module 4: force the initially unsupported PQ group"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "--curves", "X25519MLKEM768", "https://localhost/"]
+          register: pq_rejected
+          changed_when: false
+          failed_when: false
+        - name: "A working baseline rejects the unsupported PQ handshake"
+          ansible.builtin.assert:
+            that:
+              - "'Super-Business Secure Portal' in initial.stdout"
+              - "baseline_tls.stdout is search('(?m)^Peer Temp Key: X25519,')"
+              - "pq_rejected.rc == 35"
+              - "pq_rejected.stderr is search('(?i)(handshake failure|alert number 40)')"
+        - name: "Module 4: retrieve nginx logs after the failed handshake"
+          ansible.builtin.command: journalctl -u nginx --no-pager -n 20
+          changed_when: false
+
+        - name: Configure nginx to offer X25519MLKEM768:X25519
+          ansible.builtin.lineinfile:
+            path: /etc/nginx/conf.d/pqc-web.conf
+            regexp: '^[[:space:]]*ssl_ecdh_curve[[:space:]]+'
+            line: '    ssl_ecdh_curve X25519MLKEM768:X25519;'
+        - name: "Validate the changed nginx configuration"
+          ansible.builtin.command:
+            argv: ["nginx", "-t"]
+          changed_when: false
+        - name: "Reload nginx"
+          ansible.builtin.command:
+            argv: ["systemctl", "reload", "nginx"]
+        - name: "Module 5: connect with hybrid PQ only"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "--curves", "X25519MLKEM768", "https://localhost/"]
+          register: both_pq
+          changed_when: false
+        - name: "Module 5: connect with classical only"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "--curves", "X25519", "https://localhost/"]
+          register: both_classical
+          changed_when: false
+        - name: "Both TLS groups now serve the application"
+          ansible.builtin.assert:
+            that:
+              - "'Super-Business Secure Portal' in both_pq.stdout"
+              - "'Super-Business Secure Portal' in both_classical.stdout"
+        - name: Configure nginx to offer X25519MLKEM768
+          ansible.builtin.lineinfile:
+            path: /etc/nginx/conf.d/pqc-web.conf
+            regexp: '^[[:space:]]*ssl_ecdh_curve[[:space:]]+'
+            line: '    ssl_ecdh_curve X25519MLKEM768;'
+        - name: "Validate the changed nginx configuration"
+          ansible.builtin.command:
+            argv: ["nginx", "-t"]
+          changed_when: false
+        - name: "Reload nginx"
+          ansible.builtin.command:
+            argv: ["systemctl", "reload", "nginx"]
+        - name: "Module 6: connect with hybrid PQ only"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "--curves", "X25519MLKEM768", "https://localhost/"]
+          register: only_pq
+          changed_when: false
+        - name: "Module 6: verify rejection with classical only"
+          ansible.builtin.command:
+            argv: ["curl", "--silent", "--show-error", "--fail", "--insecure", "--noproxy", "*", "--max-time", "10", "--tlsv1.3", "--curves", "X25519", "https://localhost/"]
+          register: classical_rejected
+          changed_when: false
+          failed_when: false
+        - name: "Require PQ success and a classical handshake failure"
+          ansible.builtin.assert:
+            that:
+              - "'Super-Business Secure Portal' in only_pq.stdout"
+              - "classical_rejected.rc == 35"
+              - "classical_rejected.stderr is search('(?i)(handshake failure|alert number 40)')"
+      always:
+        - name: Restore the original file and service state
+          block:
+            - name: Restore the exact starting nginx configuration
+              ansible.builtin.copy:
+                dest: /etc/nginx/conf.d/pqc-web.conf
+                content: "{{ tls_original.content | b64decode }}"
+                owner: root
+                group: root
+                mode: "0644"
+
+            - name: Validate restored nginx configuration
+              ansible.builtin.command: nginx -t
+              changed_when: false
+          always:
+            - name: Stop nginx as in the clean learner baseline
+              ansible.builtin.systemd_service:
+                name: nginx
+                state: stopped

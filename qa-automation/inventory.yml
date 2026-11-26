@@ -1,0 +1,31 @@
+---
+- name: Register the lab bastion for standalone QA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    qa_host: "{{ lookup('ansible.builtin.env', 'BASTION_HOST') }}"
+    qa_port: "{{ lookup('ansible.builtin.env', 'BASTION_PORT') }}"
+    qa_user: "{{ lookup('ansible.builtin.env', 'BASTION_USER') or lookup('ansible.builtin.env', 'ANSIBLE_USER') }}"
+    qa_password: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') or lookup('ansible.builtin.env', 'ANSIBLE_PASSWORD') }}"
+  tasks:
+    - name: Require the runner's bastion connection settings
+      ansible.builtin.assert:
+        that:
+          - qa_host | length > 0
+          - qa_port | int > 0
+          - qa_user | length > 0
+          - qa_password | length > 0
+        fail_msg: "Missing lab bastion host, port, user, or password."
+      no_log: true
+
+    - name: Add the bastion without exposing credentials
+      ansible.builtin.add_host:
+        name: qa-bastion
+        groups: qa_bastions
+        ansible_host: "{{ qa_host }}"
+        ansible_port: "{{ qa_port | int }}"
+        ansible_user: "{{ qa_user }}"
+        ansible_password: "{{ qa_password }}"
+        ansible_become_password: "{{ qa_password }}"
+      no_log: true
