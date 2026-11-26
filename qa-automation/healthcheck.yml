@@ -7,6 +7,14 @@
   any_errors_fatal: true
   become: true
   tasks:
+    - name: Read the RHEL release
+      ansible.builtin.command: cat /etc/redhat-release
+      register: rhel_release
+      changed_when: false
+    - name: Read the OpenSSL version
+      ansible.builtin.command: openssl version
+      register: openssl_release
+      changed_when: false
     - name: "Inspect the system-wide crypto policy"
       ansible.builtin.command:
         argv: ["update-crypto-policies", "--show"]
@@ -39,6 +47,10 @@
     - name: "Assert the clean classical-only server baseline"
       ansible.builtin.assert:
         that:
+          - rhel_release.stdout is search('^Red Hat Enterprise Linux.* release 10[.][1-9][0-9]*(?:[. ]|$)')
+          - openssl_release.stdout.split() | length >= 2
+          - openssl_release.stdout.split()[0] == 'OpenSSL'
+          - openssl_release.stdout.split()[1] is version('3.5.0', '>=')
           - "policy.stdout | trim == 'DEFAULT'"
           - "'X25519MLKEM768' in groups.stdout"
           - "curve.stdout.split() == ['ssl_ecdh_curve', 'X25519;']"

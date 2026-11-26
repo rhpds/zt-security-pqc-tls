@@ -42,6 +42,16 @@
               - "baseline_tls.stdout is search('(?m)^Peer Temp Key: X25519,')"
               - "pq_rejected.rc == 35"
               - "pq_rejected.stderr is search('(?i)(handshake failure|alert number 40)')"
+        - name: "Module 4: reproduce the failed handshake with the learner's OpenSSL diagnostic"
+          ansible.builtin.command:
+            argv: [timeout, "10", openssl, s_client, -connect, "localhost:443", -tls1_3, -groups, X25519MLKEM768]
+            stdin: ""
+          register: pq_diagnostic
+          changed_when: false
+          failed_when: >-
+            pq_diagnostic.rc != 1 or
+            pq_diagnostic.stderr is not search('(?i)(handshake failure|alert number 40)')
+
         - name: "Module 4: retrieve nginx logs after the failed handshake"
           ansible.builtin.command: journalctl -u nginx --no-pager -n 20
           changed_when: false
