@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 USER=rhel
 
 echo "Adding wheel" > /root/post-run.log

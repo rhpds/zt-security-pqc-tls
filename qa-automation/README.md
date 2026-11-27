@@ -1,9 +1,11 @@
 # Lab QA
 
 Run from the lab repository in a runner that can reach the provisioned
-bastion. The playbooks build their own inventory from `BASTION_HOST`,
-`BASTION_PORT`, `BASTION_USER`, and `BASTION_PASSWORD` (the runner's
-`ANSIBLE_USER` / `ANSIBLE_PASSWORD` are supported as fallbacks).
+bastion. The playbooks prefer the runner's injected `bastion_host`,
+`bastion_port`, `bastion_user`, and `bastion_password`, then fall back to
+`BASTION_*` environment settings (`ANSIBLE_USER` and `ANSIBLE_PASSWORD`
+are also supported). If the runner supplies only its `host1` placeholder
+for the host, QA uses the lab's in-namespace `rhel:22` SSH service.
 Provide credentials via the runner environment, not in Git or CLI arguments.
 For a manual run, ensure the bastion's SSH host key is trusted.
 
