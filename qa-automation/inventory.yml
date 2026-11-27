@@ -4,20 +4,39 @@
   connection: local
   gather_facts: false
   vars:
-    qa_host: "{{ lookup('ansible.builtin.env', 'BASTION_HOST') }}"
-    qa_port: "{{ lookup('ansible.builtin.env', 'BASTION_PORT') }}"
-    qa_user: "{{ lookup('ansible.builtin.env', 'BASTION_USER') or lookup('ansible.builtin.env', 'ANSIBLE_USER') }}"
-    qa_password: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') or lookup('ansible.builtin.env', 'ANSIBLE_PASSWORD') }}"
+    # Older runners can default to host1 when there are no learner runtime scripts.
+    qa_userdata_host: "{{ bastion_host | default('') | trim }}"
+    qa_env_host: "{{ lookup('ansible.builtin.env', 'BASTION_HOST') | trim }}"
+    qa_use_userdata: "{{ qa_userdata_host not in ['', 'host1'] }}"
+    qa_use_env: "{{ not (qa_use_userdata | bool) and qa_env_host not in ['', 'host1'] }}"
+    qa_host: >-
+      {{ qa_userdata_host if qa_use_userdata | bool else
+         qa_env_host if qa_use_env | bool else
+         'rhel' if 'host1' in [qa_userdata_host, qa_env_host] else '' }}
+    qa_port: >-
+      {{ (bastion_port | default('22', true)) if qa_use_userdata | bool else
+         (lookup('ansible.builtin.env', 'BASTION_PORT') | default('22', true)) if qa_use_env | bool else '22' }}
+    qa_user: "{{ bastion_user | default('', true) or lookup('ansible.builtin.env', 'BASTION_USER') or lookup('ansible.builtin.env', 'ANSIBLE_USER') }}"
+    qa_password: "{{ bastion_password | default('', true) or lookup('ansible.builtin.env', 'BASTION_PASSWORD') or lookup('ansible.builtin.env', 'ANSIBLE_PASSWORD') }}"
   tasks:
     - name: Require the runner's bastion connection settings
       ansible.builtin.assert:
         that:
           - qa_host | length > 0
           - qa_port | int > 0
+          - qa_port | int <= 65535
           - qa_user | length > 0
           - qa_password | length > 0
         fail_msg: "Missing lab bastion host, port, user, or password."
       no_log: true
+
+    - name: Check the bastion SSH endpoint from the runner
+      ansible.builtin.wait_for:
+        host: "{{ qa_host }}"
+        port: "{{ qa_port | int }}"
+        connect_timeout: 2
+        timeout: 8
+        msg: "QA runner cannot reach the bastion SSH endpoint {{ qa_host }}:{{ qa_port }}. Check the deployed bastion settings and runner network."
 
     - name: Add the bastion without exposing credentials
       ansible.builtin.add_host:
