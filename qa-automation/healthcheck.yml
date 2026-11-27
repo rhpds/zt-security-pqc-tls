@@ -23,7 +23,7 @@
     - name: "Inspect OpenSSL TLS groups"
       ansible.builtin.command:
         argv: ["openssl", "list", "-tls-groups"]
-      register: groups
+      register: openssl_tls_groups
       changed_when: false
     - name: "Validate the provisioned nginx configuration"
       ansible.builtin.command:
@@ -52,6 +52,6 @@
           - openssl_release.stdout.split()[0] == 'OpenSSL'
           - openssl_release.stdout.split()[1] is version('3.5.0', '>=')
           - "policy.stdout | trim == 'DEFAULT'"
-          - "'X25519MLKEM768' in groups.stdout"
+          - "'X25519MLKEM768' in openssl_tls_groups.stdout"
           - "curve.stdout.split() == ['ssl_ecdh_curve', 'X25519;']"
           - "nginx_state.stdout | trim == 'inactive'"
